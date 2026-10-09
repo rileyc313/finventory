@@ -1,0 +1,11 @@
+{
+  "productName": "Finventory",
+  "version": "1.0.0",
+  "identifier": "com.finventory.desktop",
+  "build": { "frontendDist": "ui" },
+  "app": {
+    "windows": [{ "title": "Finventory", "width": 1280, "height": 840, "minWidth": 720, "minHeight": 520, "backgroundColor": "#11151c" }],
+    "security": { "csp": null }
+  },
+  "bundle": { "icon": ["icons/icon.ico"] }
+}
