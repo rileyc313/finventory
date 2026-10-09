@@ -1,0 +1,560 @@
+<!doctype html>
+<html lang="en" data-theme="dark">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Finventory</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=Quicksand:wght@500;600;700&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --cerulean: #2e8fa4; --elephant: #0b3141; --tumbleweed: #be9567; --armadillo: #504c41;
+    --good-bg: #a5dfa5; --good: #407840; --mid-bg: #fbcb7c; --mid: #826a48; --bad-bg: #fa7f7f; --bad: #772e2e;
+  }
+  [data-theme=dark] {
+    --text: #e4e5e6; --dim: #9a9da1; --faint: #6a6d71; --main: #050505; --bg: #0b0b0b; --panel: #131313; --alt: #191919;
+    --line: #262626; --accent: #2e8fa4; --shadow: 0 10px 24px #0009; color-scheme: dark;
+  }
+  [data-theme=light] {
+    --text: #1a1a1a; --dim: #5c5c5c; --faint: #919191; --main: #f5f5f5; --bg: #e8e8e8; --panel: #dddddd; --alt: #cccccc;
+    --line: #cfcfcf; --accent: #2e8fa4; --shadow: 0 8px 20px #0002; color-scheme: light;
+  }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; }
+  body { min-height: 100vh; display: flex; flex-direction: column; background: var(--bg); color: var(--text);
+         font: 14px/1.5 "Plus Jakarta Sans", "Segoe UI", system-ui, sans-serif; }
+  button, input, select { font: inherit; color: inherit; }
+  svg { width: 18px; height: 18px; fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; flex: none; }
+
+  header.top { position: sticky; top: 0; z-index: 5; display: flex; align-items: center; gap: 14px; padding: 12px 28px;
+               background: var(--main); border-bottom: 1px solid var(--line); }
+  #logo { height: 30px; }
+  .tabs { display: flex; gap: 4px; margin-left: 14px; padding: 4px; border-radius: 10px; background: var(--panel); }
+  .tabs button { border: 0; background: none; color: var(--dim); font-weight: 600; padding: 6px 14px; border-radius: 7px; cursor: pointer; }
+  .tabs button.on { background: var(--alt); color: var(--text); }
+  .spacer { flex: 1; }
+  .scanbox { display: none; width: 260px; font-size: 12px; color: var(--dim); }
+  .scanning .scanbox { display: block; }
+  .scanbox span { display: block; margin-bottom: 4px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .bar { height: 5px; border-radius: 3px; overflow: hidden; background: var(--alt); }
+  .bar i { display: block; height: 100%; background: var(--accent); transition: width .3s; }
+  .cta { display: inline-flex; align-items: center; gap: 8px; border: 0; border-radius: 9px; padding: 9px 16px; cursor: pointer;
+         background: var(--accent); color: #fff; font-weight: 700; }
+  .cta:hover { filter: brightness(1.1); }
+  .cta:disabled { opacity: .55; cursor: default; filter: none; }
+  .ghost { border: 1px solid var(--line); background: none; border-radius: 9px; padding: 8px 14px; cursor: pointer; font-weight: 600; }
+  .ghost:hover { background: var(--panel); }
+  .icon { display: grid; place-items: center; border: 0; background: none; color: var(--dim); padding: 8px; border-radius: 9px; cursor: pointer; }
+  .icon:hover { background: var(--panel); color: var(--text); }
+  :focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+
+  main { flex: 1; width: 100%; max-width: 1600px; margin: 0 auto; padding: 24px 28px 40px; }
+  .banner { display: flex; align-items: center; gap: 14px; margin-bottom: 18px; padding: 12px 16px; border-radius: 10px;
+            background: var(--bad-bg); color: var(--bad); font-weight: 600; }
+  .banner span { flex: 1; }
+  .banner .ghost { border-color: currentColor; }
+  .stats { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; margin-bottom: 22px; }
+  .stat { padding: 14px 18px; border-radius: 12px; background: var(--panel); }
+  .stat b { display: block; font: 700 30px/1.15 Quicksand, sans-serif; }
+  .stat span { color: var(--dim); font-size: 12px; font-weight: 600; letter-spacing: .05em; text-transform: uppercase; }
+  .stat.accent b { color: var(--accent); }
+  .toolbar { display: flex; flex-wrap: wrap; align-items: center; gap: 12px; margin-bottom: 20px; }
+  .search { position: relative; flex: 1 1 220px; max-width: 340px; }
+  .search svg { position: absolute; left: 11px; top: 50%; transform: translateY(-50%); color: var(--faint); }
+  input { width: 100%; padding: 9px 12px; border: 1px solid var(--line); border-radius: 10px; background: var(--panel); outline: none; }
+  .search input { padding-left: 36px; }
+  input:focus { border-color: var(--accent); }
+  input::placeholder { color: var(--faint); }
+  .chips { display: flex; flex-wrap: wrap; gap: 6px; }
+  .chip { border: 1px solid var(--line); border-radius: 999px; padding: 6px 13px; background: none; color: var(--dim); font-weight: 600; cursor: pointer; }
+  .chip small { margin-left: 4px; opacity: .7; }
+  .chip.on { border-color: var(--accent); background: var(--accent); color: #fff; }
+  select { margin-left: auto; padding: 8px 10px; border: 1px solid var(--line); border-radius: 10px; background: var(--panel); cursor: pointer; }
+
+  .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(158px, 1fr)); gap: 22px 18px; }
+  .card { display: flex; flex-direction: column; gap: 8px; padding: 0; border: 0; background: none; text-align: left; cursor: pointer; border-radius: 12px; }
+  .poster { position: relative; aspect-ratio: 2 / 3; overflow: hidden; border-radius: 10px; background: var(--panel); box-shadow: var(--shadow); transition: transform .15s; }
+  .card:hover .poster { transform: translateY(-3px); }
+  .poster > img, .still > img { display: block; width: 100%; height: 100%; object-fit: cover; }
+  .ph { display: grid; place-items: center; width: 100%; height: 100%; background: var(--alt); }
+  .ph img { width: 45%; opacity: .55; }
+  .badge, .pill { padding: 3px 9px; border-radius: 999px; font: 700 12px/1.4 Quicksand, sans-serif; white-space: nowrap; }
+  .badge { position: absolute; top: 8px; right: 8px; box-shadow: 0 2px 8px #0005; }
+  .good { background: var(--good-bg); color: var(--good); }
+  .mid { background: var(--mid-bg); color: var(--mid); }
+  .bad { background: var(--bad-bg); color: var(--bad); }
+  .name { overflow: hidden; font-weight: 700; line-height: 1.3; white-space: nowrap; text-overflow: ellipsis; }
+  .sub { display: flex; justify-content: space-between; gap: 8px; color: var(--dim); font-size: 12px; }
+  .note { margin-top: 28px; color: var(--dim); font-size: 13px; }
+  .empty { padding: 40px 0; color: var(--dim); text-align: center; }
+
+  .welcome { display: grid; justify-items: center; gap: 10px; padding: 70px 20px; text-align: center; }
+  .welcome img { width: 170px; margin-bottom: 8px; }
+  .welcome h1 { margin: 0; font: 700 30px/1.2 Quicksand, sans-serif; }
+  .welcome p { max-width: 460px; margin: 0 0 12px; color: var(--dim); }
+
+  .day h3 { margin: 26px 0 10px; font-size: 13px; letter-spacing: .05em; text-transform: uppercase; color: var(--dim); }
+  .day:first-of-type h3 { margin-top: 0; }
+  .ups { display: grid; grid-template-columns: repeat(auto-fill, minmax(320px, 1fr)); gap: 10px; }
+  .up { display: flex; align-items: center; gap: 14px; padding: 10px; border: 0; border-radius: 12px; background: var(--panel); text-align: left; cursor: pointer; }
+  .up:hover { background: var(--alt); }
+  .up .poster { width: 46px; flex: none; border-radius: 6px; box-shadow: none; }
+  .up b { display: block; }
+  .up span { color: var(--dim); font-size: 13px; }
+
+  dialog { width: min(1000px, 94vw); max-height: 90vh; padding: 0; border: 0; border-radius: 16px; background: var(--bg); color: var(--text); box-shadow: 0 30px 80px #000b; }
+  dialog::backdrop { background: #000a; backdrop-filter: blur(3px); }
+  .head { position: relative; display: flex; gap: 26px; padding: 28px; background: var(--main); }
+  .head .poster { width: 170px; flex: none; }
+  .head h2 { margin: 0 40px 6px 0; font: 700 28px/1.2 Quicksand, sans-serif; }
+  .meta { display: flex; flex-wrap: wrap; align-items: center; gap: 10px; color: var(--dim); }
+  .summary { display: -webkit-box; margin: 14px 0; overflow: hidden; -webkit-line-clamp: 4; -webkit-box-orient: vertical; color: var(--dim); }
+  .owned { margin-bottom: 6px; }
+  .owned b { font: 700 20px Quicksand, sans-serif; }
+  .warn { margin: 14px 0 0; padding: 10px 12px; border-left: 3px solid var(--tumbleweed); border-radius: 8px; background: var(--alt); font-size: 13px; }
+  .close { position: absolute; top: 14px; right: 14px; }
+  .body { padding: 6px 28px 30px; }
+  .body h3 { display: flex; align-items: baseline; gap: 10px; margin: 24px 0 12px; font-size: 17px; }
+  .body h3 small { color: var(--dim); font-size: 13px; font-weight: 500; }
+  .eps { display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 14px; }
+  .ep { overflow: hidden; border-radius: 10px; background: var(--panel); }
+  .still { aspect-ratio: 16 / 9; background: var(--alt); }
+  .ep > div:last-child { padding: 8px 11px 11px; }
+  .ep code { margin-right: 6px; color: var(--accent); font: 700 12px Quicksand, sans-serif; }
+  .ep small { display: block; color: var(--dim); }
+  .done { margin-top: 24px; padding: 16px; border-radius: 10px; font-weight: 600; }
+
+  #settings { width: min(480px, 94vw); }
+  #settings form { display: grid; gap: 14px; padding: 26px; }
+  #settings h2 { margin: 0; font: 700 22px Quicksand, sans-serif; }
+  #settings label { display: grid; gap: 6px; font-weight: 600; }
+  #settings label small { color: var(--dim); font-weight: 500; }
+  #settings h3 { margin: 4px 0 -4px; padding-top: 16px; border-top: 1px solid var(--line); font-size: 15px; }
+  .hint { margin: 0; color: var(--dim); font-size: 13px; }
+  #settings-status:empty { display: none; }
+  #settings-status { margin: 0; padding: 8px 12px; border-radius: 8px; font-weight: 600; }
+  .row { display: flex; justify-content: flex-end; gap: 10px; }
+
+  footer { display: flex; justify-content: space-between; gap: 24px; padding: 12px 28px; background: var(--main); color: var(--faint); font-size: 12px; white-space: nowrap; }
+  #credits { overflow: hidden; text-overflow: ellipsis; }
+
+  @media (max-width: 900px) {
+    .stats { grid-template-columns: repeat(2, 1fr); }
+    .head { flex-direction: column; } .head .poster { width: 130px; }
+    header.top { padding: 12px 16px; } main { padding: 20px 16px 32px; } .scanbox { width: 160px; }
+  }
+</style>
+</head>
+<body>
+<header class="top">
+  <img id="logo" src="img/name-white.png" alt="Finventory">
+  <nav class="tabs">
+    <button data-act="view" data-view="library">Library</button>
+    <button data-act="view" data-view="upcoming">Upcoming</button>
+  </nav>
+  <div class="spacer"></div>
+  <div class="scanbox"><span id="scan-text"></span><div class="bar"><i id="scan-bar"></i></div></div>
+  <button class="cta" id="scan" data-act="scan"></button>
+  <button class="icon" id="theme" data-act="theme" title="Switch theme"></button>
+  <button class="icon" data-act="settings" title="Settings"></button>
+</header>
+<main id="main"></main>
+<footer><span id="credits"></span><span id="last-scan"></span></footer>
+
+<dialog id="detail"></dialog>
+<dialog id="settings">
+  <form id="settings-form">
+    <h2>Connect to Jellyfin</h2>
+    <label>Server address <input name="server" required placeholder="http://192.168.1.10:8096" spellcheck="false"></label>
+    <label>API key <input name="key" type="password" required autocomplete="off" spellcheck="false"></label>
+    <p class="hint">In Jellyfin, open Dashboard → API Keys, add one called Finventory, and paste it here.</p>
+    <h3>Backup show data</h3>
+    <label>TMDB API key <small>optional</small><input name="tmdb" type="password" autocomplete="off" spellcheck="false"></label>
+    <p class="hint">Used for shows TVmaze doesn't have. Get a free key at themoviedb.org → Settings → API.</p>
+    <p id="settings-status"></p>
+    <div class="row">
+      <button type="button" class="ghost" data-act="close">Cancel</button>
+      <button class="cta">Save and connect</button>
+    </div>
+  </form>
+</dialog>
+
+<script>
+const icons = {
+  scan: '<svg viewBox="0 0 24 24"><path d="M21 12a9 9 0 1 1-2.6-6.4L21 8"/><path d="M21 3v5h-5"/></svg>',
+  sun: '<svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M2 12h2M20 12h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4"/></svg>',
+  moon: '<svg viewBox="0 0 24 24"><path d="M21 12.8A9 9 0 1 1 11.2 3a7 7 0 0 0 9.8 9.8z"/></svg>',
+  gear: '<svg viewBox="0 0 24 24"><path d="M4 21v-7M4 10V3M12 21v-9M12 8V3M20 21v-5M20 12V3M1 14h6M9 8h6M17 16h6"/></svg>',
+  search: '<svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg>',
+  x: '<svg viewBox="0 0 24 24"><path d="M18 6 6 18M6 6l12 12"/></svg>',
+};
+const $ = s => document.querySelector(s);
+const esc = s => String(s ?? '').replace(/[&<>"']/g, c => `&#${c.charCodeAt(0)};`);
+const sleep = ms => new Promise(r => setTimeout(r, ms));
+const pad = n => String(n).padStart(2, '0');
+const code = e => `S${pad(e.s)}E${pad(e.e)}`;
+const localDate = (d = new Date()) => d.toLocaleDateString('en-CA');  // YYYY-MM-DD in local time
+const addDays = n => { const d = new Date(); d.setDate(d.getDate() + n); return localDate(d); };
+const plain = html => html ? new DOMParser().parseFromString(html, 'text/html').body.textContent : '';
+const store = {
+  get(k, fallback) { try { return JSON.parse(localStorage.getItem('finventory.' + k)) ?? fallback; } catch { return fallback; } },
+  set(k, v) { try { localStorage.setItem('finventory.' + k, JSON.stringify(v)); } catch {} },
+};
+
+// Saved on this computer, so the server and keys only need entering once
+let settings = store.get('settings', { server: '', key: '' });
+let data = store.get('scan', null);
+let theme = store.get('theme', matchMedia('(prefers-color-scheme: light)').matches ? 'light' : 'dark');
+let error = '';
+let scanning = false;
+const ui = { view: 'library', filter: 'missing', sort: 'missing', q: '' };
+
+// ---------- Talking to Jellyfin and TVmaze ----------
+
+async function jf(path, s = settings) {
+  let r;
+  try { r = await fetch(s.server + path, { headers: { Authorization: `MediaBrowser Token="${s.key}"` } }); }
+  catch { throw new Error(`Couldn't reach Jellyfin at ${s.server}. Is the server on?`); }
+  if (r.status === 401) throw new Error('Jellyfin turned down that API key. Check it in Settings.');
+  if (!r.ok) throw new Error(`Jellyfin answered with an error (${r.status}).`);
+  return r.json();
+}
+
+// TVmaze allows 20 calls per 10 seconds, so calls are spaced out and retried when it says slow down
+let nextSlot = 0;
+async function maze(path) {
+  for (let tries = 1; ; tries++) {
+    const now = Date.now();
+    await sleep(Math.max(0, nextSlot - now));
+    nextSlot = Math.max(now, nextSlot) + 520;
+    let r;
+    try { r = await fetch('https://api.tvmaze.com' + path); }
+    catch { if (tries > 5) throw new Error("Couldn't reach TVmaze. Check your internet connection."); await sleep(2000); continue; }
+    if (r.status === 404) return null;
+    if (r.ok) return r.json();
+    if (r.status !== 429 || tries > 10) throw new Error(`TVmaze answered with an error (${r.status}).`);
+    await sleep(2000);
+  }
+}
+
+// TMDB is the fallback for shows TVmaze doesn't have. Either key from themoviedb.org's API page works.
+async function tmdb(path, key = settings.tmdbKey) {
+  const bearer = key.startsWith('eyJ');  // the long "read access token" rather than the short API key
+  const url = `https://api.themoviedb.org/3${path}` + (bearer ? '' : `${path.includes('?') ? '&' : '?'}api_key=${encodeURIComponent(key)}`);
+  let r;
+  try { r = await fetch(url, bearer ? { headers: { Authorization: `Bearer ${key}` } } : {}); }
+  catch { throw new Error("Couldn't reach TMDB. Check your internet connection."); }
+  if (r.status === 404) return null;
+  if (r.status === 401) throw new Error('TMDB turned down that API key. Check it in Settings.');
+  if (!r.ok) throw new Error(`TMDB answered with an error (${r.status}).`);
+  return r.json();
+}
+
+// Both providers come back in the same shape: show details plus every episode
+async function fromMaze(id) {
+  const t = await maze(`/shows/${id}?embed=episodes`);
+  return t && {
+    source: 'TVmaze', name: t.name, poster: t.image?.medium, status: t.status, network: t.network?.name || t.webChannel?.name,
+    premiered: t.premiered, ended: t.ended, rating: t.rating?.average, summary: plain(t.summary),
+    episodes: (t._embedded?.episodes || []).map(e => ({ s: e.season, e: e.number, name: e.name, date: e.airdate, img: e.image?.medium })),
+  };
+}
+
+async function fromTmdb(id) {
+  const t = await tmdb(`/tv/${id}`);
+  if (!t) return null;
+  const nums = t.seasons.map(s => s.season_number).filter(n => n > 0);  // season 0 is specials
+  const episodes = [];
+  for (let i = 0; i < nums.length; i += 20) {  // TMDB returns up to 20 seasons per call
+    const batch = nums.slice(i, i + 20);
+    const r = await tmdb(`/tv/${id}?append_to_response=${batch.map(n => `season/${n}`).join(',')}`);
+    for (const n of batch) {
+      for (const e of r?.[`season/${n}`]?.episodes || []) {
+        episodes.push({ s: e.season_number, e: e.episode_number, name: e.name, date: e.air_date, img: e.still_path && `https://image.tmdb.org/t/p/w300${e.still_path}` });
+      }
+    }
+  }
+  return {
+    source: 'TMDB', name: t.name, poster: t.poster_path && `https://image.tmdb.org/t/p/w342${t.poster_path}`,
+    status: { 'Returning Series': 'Running', Canceled: 'Ended' }[t.status] || t.status, network: t.networks?.[0]?.name,
+    premiered: t.first_air_date, ended: t.status === 'Returning Series' ? null : t.last_air_date,
+    rating: t.vote_average || null, summary: t.overview, episodes,
+  };
+}
+
+function setScan(fraction, text) {
+  $('#scan-bar').style.width = `${Math.round(fraction * 100)}%`;
+  $('#scan-text').textContent = text;
+}
+
+async function scan() {
+  if (scanning) return;
+  if (!settings.key) return openSettings();
+  scanning = true; error = '';
+  document.body.classList.add('scanning');
+  render();
+  try {
+    setScan(0, 'Reading your Jellyfin library…');
+    const items = q => jf(`/Items?Recursive=true&EnableImages=false&EnableUserData=false&${q}`).then(r => r.Items);
+    const series = await items('IncludeItemTypes=Series&Fields=ProviderIds');
+    const episodes = await items('IncludeItemTypes=Episode');
+    const have = new Map();  // Jellyfin series id -> "season:episode" on disk
+    for (const e of episodes) {
+      if (e.LocationType === 'Virtual' || e.IndexNumber == null) continue;
+      if (!have.has(e.SeriesId)) have.set(e.SeriesId, new Set());
+      // One file can hold several episodes (S01E01-E02)
+      for (let n = e.IndexNumber; n <= (e.IndexNumberEnd ?? e.IndexNumber); n++) have.get(e.SeriesId).add(`${e.ParentIndexNumber}:${n}`);
+    }
+
+    // Match each show, exact IDs before guessing: TVmaze by TVDB or IMDb ID, then TMDB by its ID
+    // (when there's a key), then TVmaze by name. Exact matches from last time skip the lookup, and
+    // the same show split across drives merges into one.
+    const known = new Map((data?.shows || []).filter(s => !s.byName).flatMap(s => s.jf.map(id => [id, s.id])));
+    const groups = new Map();
+    const unmatched = [];
+    for (const [i, s] of series.entries()) {
+      setScan(i / series.length / 2, `Matching ${i + 1} of ${series.length} · ${s.Name}`);
+      let id = known.get(s.Id), byName = false;
+      if (!id) {
+        const p = s.ProviderIds || {};
+        let show = p.Tvdb ? await maze(`/lookup/shows?thetvdb=${p.Tvdb}`) : null;
+        if (!show && p.Imdb) show = await maze(`/lookup/shows?imdb=${p.Imdb}`);
+        if (show) id = `tvmaze:${show.id}`;
+        else if (p.Tmdb && settings.tmdbKey) id = `tmdb:${p.Tmdb}`;
+        // ponytail: name search can pick the wrong show (remakes, US/UK versions); the detail view flags these
+        else if ((show = await maze(`/singlesearch/shows?q=${encodeURIComponent(s.Name)}`))) { id = `tvmaze:${show.id}`; byName = true; }
+        else { unmatched.push(s.Name); continue; }
+      }
+      if (!groups.has(id)) groups.set(id, { name: s.Name, jf: [], byName, owned: new Set() });
+      const g = groups.get(id);
+      g.jf.push(s.Id);
+      for (const k of have.get(s.Id) || []) g.owned.add(k);
+    }
+
+    // ponytail: assumes Jellyfin and the provider number seasons the same way; anime with absolute numbering may show false gaps
+    const today = localDate();
+    const shows = [];
+    let i = 0;
+    for (const [id, g] of groups) {
+      setScan(0.5 + i / groups.size / 2, `Checking ${++i} of ${groups.size} · ${g.name}`);
+      const [source, num] = id.split(':');
+      const t = source === 'tmdb' ? await fromTmdb(num) : await fromMaze(num);
+      if (!t) { unmatched.push(g.name); continue; }
+      const eps = t.episodes.filter(e => e.e && e.date);
+      const aired = eps.filter(e => e.date <= today);
+      const seasons = {};
+      for (const e of aired) seasons[e.s] = (seasons[e.s] || 0) + 1;
+      shows.push({
+        id, jf: g.jf, byName: g.byName, name: g.name, tvName: t.name, source: t.source,
+        poster: t.poster || null, status: t.status, network: t.network || '',
+        start: t.premiered?.slice(0, 4) || '', end: t.ended?.slice(0, 4) || '',
+        rating: t.rating ?? null, summary: t.summary || '',
+        aired: aired.length, seasons,
+        missing: aired.filter(e => !g.owned.has(`${e.s}:${e.e}`)),
+        upcoming: eps.filter(e => e.date > today),
+      });
+    }
+    data = { at: new Date().toISOString(), shows, unmatched };
+    store.set('scan', data);
+  } catch (err) {
+    error = err.message;
+  } finally {
+    scanning = false;
+    document.body.classList.remove('scanning');
+    render();
+  }
+}
+
+// ---------- Screens ----------
+
+const img = src => src ? `<img loading="lazy" src="${esc(src)}" alt="">`
+  : `<div class="ph"><img src="img/box-${theme === 'dark' ? 'dark' : 'light'}.png" alt=""></div>`;
+const owned = s => s.aired - s.missing.length;
+const pct = s => s.aired ? owned(s) / s.aired * 100 : 100;
+const tone = s => !s.missing.length ? 'good' : pct(s) >= 80 ? 'mid' : 'bad';
+const years = s => !s.start ? '' : s.status === 'Running' ? `${s.start}–` : s.end && s.end !== s.start ? `${s.start}–${s.end}` : s.start;
+const fmtDate = d => new Date(d + 'T00:00').toLocaleDateString(undefined, { year: 'numeric', month: 'short', day: 'numeric' });
+function dayLabel(d) {
+  if (d === localDate()) return 'Today';
+  if (d === addDays(1)) return 'Tomorrow';
+  return new Date(d + 'T00:00').toLocaleDateString(undefined, { weekday: 'long', month: 'short', day: 'numeric' });
+}
+const banner = () => error ? `<div class="banner"><span>${esc(error)}</span><button class="ghost" data-act="settings">Open settings</button></div>` : '';
+
+function render() {
+  document.documentElement.dataset.theme = theme;
+  $('#logo').src = theme === 'dark' ? 'img/name-white.png' : 'img/name-elephant.png';
+  $('#theme').innerHTML = theme === 'dark' ? icons.sun : icons.moon;
+  $('[data-act=settings].icon').innerHTML = icons.gear;
+  $('#scan').innerHTML = `${icons.scan}${scanning ? 'Scanning…' : data ? 'Scan again' : 'Scan library'}`;
+  $('#scan').disabled = scanning;
+  document.querySelectorAll('.tabs button').forEach(b => b.classList.toggle('on', b.dataset.view === ui.view));
+  $('#credits').textContent = settings.tmdbKey ? 'Data from TVmaze and TMDB · Not endorsed or certified by TMDB' : 'Data from TVmaze';
+  $('#last-scan').textContent = data
+    ? `Scanned ${new Date(data.at).toLocaleString(undefined, { month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit' })}` : '';
+
+  const main = $('#main');
+  if (!settings.key) {
+    main.innerHTML = banner() + `<div class="welcome"><img src="img/box-${theme === 'dark' ? 'dark' : 'light'}.png" alt="">
+      <h1>Welcome to Finventory</h1><p>See which episodes are missing from your Jellyfin shows, and what's airing next.</p>
+      <button class="cta" data-act="settings">Connect to Jellyfin</button></div>`;
+  } else if (!data) {
+    main.innerHTML = banner() + `<div class="welcome"><img src="img/box-${theme === 'dark' ? 'dark' : 'light'}.png" alt="">
+      <h1>${scanning ? 'Scanning your library…' : 'Ready when you are'}</h1>
+      <p>The first scan takes a few minutes, since TVmaze only answers about two questions a second. Scans after that are about twice as fast.</p>
+      ${scanning ? '' : `<button class="cta" data-act="scan">${icons.scan}Scan library</button>`}</div>`;
+  } else if (ui.view === 'upcoming') {
+    renderUpcoming(main);
+  } else {
+    renderLibrary(main);
+  }
+}
+
+function renderLibrary(main) {
+  const shows = data.shows, today = localDate(), week = addDays(7);
+  const count = f => shows.filter(filters[f]).length;
+  const thisWeek = shows.reduce((n, s) => n + s.upcoming.filter(e => e.date >= today && e.date <= week).length, 0);
+  main.innerHTML = banner() + `
+    <section class="stats">
+      <div class="stat"><b>${shows.length}</b><span>Shows</span></div>
+      <div class="stat accent"><b>${shows.reduce((n, s) => n + s.missing.length, 0).toLocaleString()}</b><span>Missing episodes</span></div>
+      <div class="stat"><b>${count('complete')}</b><span>Complete shows</span></div>
+      <div class="stat"><b>${thisWeek}</b><span>Airing this week</span></div>
+    </section>
+    <div class="toolbar">
+      <div class="search">${icons.search}<input id="q" type="search" placeholder="Search your shows" value="${esc(ui.q)}"></div>
+      <div class="chips">${[['missing', 'Missing'], ['complete', 'Complete'], ['airing', 'Still airing'], ['all', 'All']].map(([f, label]) =>
+        `<button class="chip ${ui.filter === f ? 'on' : ''}" data-act="filter" data-filter="${f}">${label}<small>${count(f)}</small></button>`).join('')}</div>
+      <select id="sort">${[['missing', 'Most missing'], ['nearly', 'Nearly complete'], ['az', 'A to Z']].map(([v, label]) =>
+        `<option value="${v}" ${ui.sort === v ? 'selected' : ''}>${label}</option>`).join('')}</select>
+    </div>
+    <div class="grid" id="grid"></div>
+    ${data.unmatched.length ? `<p class="note">Couldn't find ${data.unmatched.length} on ${settings.tmdbKey ? 'TVmaze or TMDB' : 'TVmaze'}:
+      ${data.unmatched.map(esc).join(', ')}${settings.tmdbKey ? '' : '. Add a TMDB key in Settings to look for them there too.'}</p>` : ''}`;
+  renderGrid();
+}
+
+const filters = { missing: s => s.missing.length > 0, complete: s => !s.missing.length, airing: s => s.status === 'Running', all: () => true };
+const sorts = { missing: (a, b) => b.missing.length - a.missing.length, nearly: (a, b) => a.missing.length - b.missing.length, az: () => 0 };
+
+function renderGrid() {
+  const q = ui.q.trim().toLowerCase();
+  const list = data.shows.filter(s => filters[ui.filter](s) && s.name.toLowerCase().includes(q))
+    .sort((a, b) => sorts[ui.sort](a, b) || a.name.localeCompare(b.name));
+  $('#grid').innerHTML = list.map(s => `
+    <button class="card" data-act="show" data-id="${esc(s.id)}">
+      <div class="poster">${img(s.poster)}<span class="badge ${tone(s)}">${s.missing.length ? `${s.missing.length} missing` : 'Complete'}</span></div>
+      <div><div class="name" title="${esc(s.name)}">${esc(s.name)}</div><div class="sub"><span>${years(s)}</span><span>${owned(s)} / ${s.aired}</span></div></div>
+      <div class="bar"><i style="width:${pct(s)}%"></i></div>
+    </button>`).join('') || `<p class="empty">No shows here.</p>`;
+}
+
+function renderUpcoming(main) {
+  const today = localDate();
+  const list = data.shows.flatMap(s => s.upcoming.filter(e => e.date >= today).map(e => ({ ...e, show: s })))
+    .sort((a, b) => a.date.localeCompare(b.date) || a.show.name.localeCompare(b.show.name));
+  const days = Map.groupBy(list, e => e.date);
+  main.innerHTML = banner() + (list.length ? [...days].map(([d, eps]) => `
+    <section class="day"><h3>${dayLabel(d)}</h3><div class="ups">${eps.map(e => `
+      <button class="up" data-act="show" data-id="${esc(e.show.id)}"><div class="poster">${img(e.show.poster)}</div>
+        <div><b>${esc(e.show.name)}</b><span>${code(e)} · ${esc(e.name)}</span></div></button>`).join('')}</div></section>`).join('')
+    + `<p class="note">From your last scan. Scan again to pick up newly announced episodes.</p>`
+    : `<p class="empty">Nothing announced yet for the shows you have.</p>`);
+}
+
+function openDetail(id) {
+  const s = data.shows.find(x => x.id === id);
+  if (!s) return;
+  const bySeason = Map.groupBy(s.missing, e => e.s);
+  const r = s.rating;
+  const ep = e => `<div class="ep"><div class="still">${img(e.img)}</div>
+    <div><code>${code(e)}</code>${esc(e.name)}<small>${s.upcoming.includes(e) ? dayLabel(e.date) : fmtDate(e.date)}</small></div></div>`;
+  $('#detail').innerHTML = `
+    <div class="head">
+      <div class="poster">${img(s.poster)}</div>
+      <div>
+        <h2>${esc(s.name)}</h2>
+        <div class="meta">${[years(s), s.network, s.status, `via ${s.source}`].filter(Boolean).map(esc).join(' · ')}
+          ${r ? `<span class="pill ${r >= 7.5 ? 'good' : r >= 6 ? 'mid' : 'bad'}">★ ${r.toFixed(1)}</span>` : ''}</div>
+        <p class="summary">${esc(s.summary)}</p>
+        <div class="owned"><b>${owned(s)}</b> of ${s.aired} aired episodes on your server</div>
+        <div class="bar"><i style="width:${pct(s)}%"></i></div>
+        ${s.byName ? `<p class="warn">Matched by name to <b>${esc(s.tvName)}</b> on TVmaze. If that's the wrong show, add its TVDB, IMDb or TMDB ID in Jellyfin and scan again.</p>` : ''}
+      </div>
+      <button class="icon close" data-act="close" title="Close">${icons.x}</button>
+    </div>
+    <div class="body">
+      ${s.missing.length ? [...bySeason].map(([n, eps]) => `
+        <h3>Season ${n} <small>${eps.length === s.seasons[n] ? `whole season · ${eps.length} episodes` : `${eps.length} of ${s.seasons[n]} missing`}</small></h3>
+        <div class="eps">${eps.map(ep).join('')}</div>`).join('')
+      : `<div class="done good">You have every aired episode.</div>`}
+      ${s.upcoming.length ? `<h3>Coming up <small>${s.upcoming.length} announced</small></h3><div class="eps">${s.upcoming.map(ep).join('')}</div>` : ''}
+    </div>`;
+  $('#detail').showModal();
+  $('#detail').scrollTop = 0;
+}
+
+function openSettings() {
+  const f = $('#settings-form');
+  f.server.value = settings.server;
+  f.key.value = settings.key;
+  f.tmdb.value = settings.tmdbKey || '';
+  $('#settings-status').textContent = '';
+  $('#settings').showModal();
+}
+
+function settingsStatus(text, cls = '') {
+  const el = $('#settings-status');
+  el.textContent = text;
+  el.className = cls;
+}
+
+// ---------- Wiring ----------
+
+$('#settings-form').addEventListener('submit', async e => {
+  e.preventDefault();
+  const f = e.target;
+  const next = { server: f.server.value.trim().replace(/\/+$/, ''), key: f.key.value.trim(), tmdbKey: f.tmdb.value.trim() };
+  if (!/^https?:\/\/[^/]+/.test(next.server)) return settingsStatus('The address should look like http://192.168.1.10:8096', 'bad');
+  // Saved even if the test fails, so nothing needs retyping after fixing the server
+  settings = next;
+  store.set('settings', settings);
+  error = '';
+  render();
+  settingsStatus('Saved. Connecting…');
+  try {
+    const info = await jf('/System/Info');
+    if (settings.tmdbKey) await tmdb('/configuration');
+    settingsStatus(`Saved and connected to ${info.ServerName} (Jellyfin ${info.Version})${settings.tmdbKey ? ' and TMDB' : ''}`, 'good');
+    await sleep(900);
+    $('#settings').close();
+  } catch (err) {
+    settingsStatus(`Saved, but: ${err.message}`, 'bad');
+  }
+});
+
+document.addEventListener('click', e => {
+  if (e.target.tagName === 'DIALOG') return e.target.close();  // clicked the dimmed backdrop
+  const t = e.target.closest('[data-act]');
+  if (!t) return;
+  const act = t.dataset.act;
+  if (act === 'scan') scan();
+  else if (act === 'settings') openSettings();
+  else if (act === 'close') t.closest('dialog').close();
+  else if (act === 'show') openDetail(t.dataset.id);
+  else if (act === 'theme') { theme = theme === 'dark' ? 'light' : 'dark'; store.set('theme', theme); render(); }
+  else if (act === 'view') { ui.view = t.dataset.view; render(); }
+  else if (act === 'filter') {
+    ui.filter = t.dataset.filter;
+    document.querySelectorAll('.chip').forEach(c => c.classList.toggle('on', c === t));
+    renderGrid();
+  }
+});
+document.addEventListener('input', e => { if (e.target.id === 'q') { ui.q = e.target.value; renderGrid(); } });
+document.addEventListener('change', e => { if (e.target.id === 'sort') { ui.sort = e.target.value; renderGrid(); } });
+
+render();
+</script>
+</body>
+</html>
